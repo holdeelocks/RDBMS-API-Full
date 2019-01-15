@@ -13,7 +13,15 @@ router.get("/:id", (req, res) => {
     .where({ id })
     .then(student => {
       if (student) {
-        res.status(200).json(student);
+        const newStudent = { ...student[0] };
+        const cohortId = newStudent.cohort_id;
+        delete newStudent["cohort_id"];
+        delete newStudent.createdAt;
+        db("cohorts")
+          .where({ id: cohortId })
+          .then(response => {
+            res.status(200).json({ ...newStudent, cohort: response[0].name });
+          });
       } else {
         res.status(404).json({ error: "A student with that id does not exist" });
       }
