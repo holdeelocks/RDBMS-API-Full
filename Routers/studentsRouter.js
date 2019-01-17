@@ -10,23 +10,12 @@ router.get("/:id", (req, res) => {
   const { id } = req.params;
 
   db("students")
-    .where({ id })
-    .then(student => {
-      if (student) {
-        const newStudent = { ...student[0] };
-        const cohortId = newStudent.cohort_id;
-        delete newStudent["cohort_id"];
-        delete newStudent.createdAt;
-        db("cohorts")
-          .where({ id: cohortId })
-          .then(response => {
-            res.status(200).json({ ...newStudent, cohort: response[0].name });
-          });
-      } else {
-        res.status(404).json({ error: "A student with that id does not exist" });
-      }
-    })
-    .catch(err => res.status(500).json(err));
+    .join("cohorts", "cohorts.id", "students.cohort_id")
+    .select("students.id", "students.name", "cohorts.name as cohort")
+    .where({ "students.id": id })
+    .first()
+    .then(student => res.status(200).json(student))
+    .catch(err => res.status(500).json({ error: "Unable to reach server" }));
 });
 
 router.get("/", (req, res) => {
